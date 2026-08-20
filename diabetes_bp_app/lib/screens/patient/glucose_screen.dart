@@ -51,7 +51,7 @@ class _GlucoseScreenState extends State<GlucoseScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Card(
-              color: Colors.blue.withOpacity(0.06),
+              color: Colors.red.withOpacity(0.06),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               child: Padding(
                 padding: const EdgeInsets.all(16),
