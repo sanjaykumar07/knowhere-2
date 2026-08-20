@@ -15,7 +15,7 @@ class HealthChart extends StatelessWidget {
     super.key,
     required this.primarySeries,
     this.secondarySeries,
-    this.primaryColor = Colors.blue,
+    this.primaryColor = Colors.red,
     this.secondaryColor = Colors.deepOrange,
     required this.minY,
     required this.maxY,
