@@ -1,0 +1,200 @@
+import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
+import '../../services/auth_service.dart';
+import '../../services/firestore_service.dart';
+import '../../services/notification_service.dart';
+import '../../models/user_model.dart';
+import '../../models/glucose_reading.dart';
+import '../../models/bp_reading.dart';
+import '../../models/medication.dart';
+import '../../models/symptom_log.dart';
+import '../../widgets/glucose_card.dart';
+import '../../widgets/bp_card.dart';
+import '../../widgets/symptom_selector.dart';
+import '../auth/login_screen.dart';
+import 'glucose_screen.dart';
+import 'bp_screen.dart';
+import 'medication_screen.dart';
+import 'history_screen.dart';
+import 'profile_screen.dart';
+
+class DashboardScreen extends StatefulWidget {
+  const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  final _auth = AuthService();
+  final _firestore = FirestoreService();
+  final _notifications = NotificationService();
+
+  String? _selectedFeeling;
+  final Set<String> _selectedSymptoms = {};
+
+  String get _uid => _auth.currentUser!.uid;
+
+  Future<void> _saveCheckIn() async {
+    const uuid = Uuid();
+    final log = SymptomLog(
+      id: uuid.v4(),
+      feeling: _selectedFeeling!,
+      symptoms: _selectedSymptoms.toList(),
+      timestamp: DateTime.now(),
+    );
+    await _firestore.saveSymptomLog(_uid, log);
+    if (!mounted) return;
+    setState(() {
+      _selectedFeeling = null;
+      _selectedSymptoms.clear();
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Check-in saved')),
+    );
+  }
+
+  void _maybeShowAlert(HealthAlert? alert) {
+    if (alert == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(alert.title),
+          content: Text(alert.message),
+          actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))],
+        ),
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Home'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person_outline),
+            onPressed: () => Navigator.push(
+                context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await _auth.signOut();
+              if (!mounted) return;
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (route) => false,
+              );
+            },
+          ),
+        ],
+      ),
+      body: StreamBuilder<UserModel?>(
+        stream: _firestore.streamUserProfile(_uid),
+        builder: (context, userSnap) {
+          final userName = userSnap.data?.name.split(' ').first ?? '';
+          return RefreshIndicator(
+            onRefresh: () async {},
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                Text('Good ${_greeting()}, $userName',
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+
+                // Glucose card
+                StreamBuilder<List<GlucoseReading>>(
+                  stream: _firestore.streamGlucoseHistory(_uid, limit: 1),
+                  builder: (context, snap) {
+                    final latest = (snap.data != null && snap.data!.isNotEmpty) ? snap.data!.first : null;
+                    if (latest != null) _maybeShowAlert(_notifications.checkGlucose(latest));
+                    return GlucoseCard(
+                      latest: latest,
+                      onUpdate: () => Navigator.push(
+                          context, MaterialPageRoute(builder: (_) => const GlucoseScreen())),
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // BP card
+                StreamBuilder<List<BPReading>>(
+                  stream: _firestore.streamBPHistory(_uid, limit: 1),
+                  builder: (context, snap) {
+                    final latest = (snap.data != null && snap.data!.isNotEmpty) ? snap.data!.first : null;
+                    if (latest != null) _maybeShowAlert(_notifications.checkBP(latest));
+                    return BPCard(
+                      latest: latest,
+                      onUpdate: () =>
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const BPScreen())),
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Medication summary card
+                StreamBuilder<List<Medication>>(
+                  stream: _firestore.streamMedications(_uid),
+                  builder: (context, medSnap) {
+                    final meds = medSnap.data ?? [];
+                    return Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      child: ListTile(
+                        leading: const Text('💊', style: TextStyle(fontSize: 22)),
+                        title: const Text('MEDICATION', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        subtitle: Text(meds.isEmpty
+                            ? 'No medications added yet'
+                            : '${meds.length} medication${meds.length == 1 ? '' : 's'} scheduled'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => Navigator.push(
+                            context, MaterialPageRoute(builder: (_) => const MedicationScreen())),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Feeling / symptoms
+                SymptomSelector(
+                  selectedFeeling: _selectedFeeling,
+                  selectedSymptoms: _selectedSymptoms,
+                  onFeelingSelected: (f) => setState(() => _selectedFeeling = f),
+                  onSymptomToggled: (s) => setState(() {
+                    if (_selectedSymptoms.contains(s)) {
+                      _selectedSymptoms.remove(s);
+                    } else {
+                      _selectedSymptoms.add(s);
+                    }
+                  }),
+                  onSave: _saveCheckIn,
+                ),
+                const SizedBox(height: 16),
+
+                OutlinedButton.icon(
+                  onPressed: () => Navigator.push(
+                      context, MaterialPageRoute(builder: (_) => const HistoryScreen())),
+                  icon: const Icon(Icons.show_chart),
+                  label: const Text('View History & Trends'),
+                ),
+                const SizedBox(height: 24),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  String _greeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'morning';
+    if (hour < 17) return 'afternoon';
+    return 'evening';
+  }
+}

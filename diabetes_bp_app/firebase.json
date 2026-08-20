@@ -1,0 +1,1 @@
+{"firestore":{"database":"(default)","location":"nam5","rules":"firestore.rules","indexes":"firestore.indexes.json"},"flutter":{"platforms":{"dart":{"lib/firebase_options.dart":{"projectId":"diabetes-app-d52fc","configurations":{"web":"1:406166357289:web:8b1d36273e2ecfe0d3e338"}}}}}}
