@@ -42,7 +42,8 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _hypertension = false;
   final _dateDiagnosedCtrl = TextEditingController();
   final _allergiesCtrl = TextEditingController();
-  final _emergencyContactCtrl = TextEditingController();
+  final _emergencyNameCtrl = TextEditingController();
+  final _emergencyNumberCtrl = TextEditingController();
 
   // Medication
   bool _takesMedication = false;
@@ -96,7 +97,15 @@ class _SignupScreenState extends State<SignupScreen> {
         hypertension: _hypertension,
         dateDiagnosed: _dateDiagnosedCtrl.text.trim().isEmpty ? null : _dateDiagnosedCtrl.text.trim(),
         allergies: _allergiesCtrl.text.trim(),
-        emergencyContact: _emergencyContactCtrl.text.trim(),
+        emergencyContacts: _emergencyNameCtrl.text.trim().isEmpty &&
+                _emergencyNumberCtrl.text.trim().isEmpty
+            ? const []
+            : [
+                EmergencyContact(
+                  name: _emergencyNameCtrl.text.trim(),
+                  number: _emergencyNumberCtrl.text.trim(),
+                ),
+              ],
       );
       await _firestoreService.createUserProfile(user);
 
@@ -241,8 +250,15 @@ class _SignupScreenState extends State<SignupScreen> {
             ),
             const SizedBox(height: 12),
             TextFormField(
-              controller: _emergencyContactCtrl,
-              decoration: _dec('Emergency contact (name & phone)'),
+              controller: _emergencyNameCtrl,
+              decoration: _dec('Emergency contact name'),
+              validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _emergencyNumberCtrl,
+              keyboardType: TextInputType.phone,
+              decoration: _dec('Emergency contact number'),
               validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
             ),
 

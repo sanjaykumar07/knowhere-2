@@ -49,7 +49,7 @@ class _MainShellState extends State<MainShell> {
           NavigationDestination(
             icon: Icon(Icons.show_chart_outlined),
             selectedIcon: Icon(Icons.show_chart),
-            label: 'Trends',
+            label: 'History',
           ),
           NavigationDestination(
             icon: Icon(Icons.medication_outlined),

@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import '../models/symptom_log.dart';
 
 /// "How are you feeling?" buttons + multi-select symptom chips.
-/// No text input anywhere — everything is a tap.
+/// Selecting the 'Other' chip reveals a free-text field so the patient can
+/// describe a symptom that isn't listed.
 class SymptomSelector extends StatelessWidget {
   final String? selectedFeeling;
   final Set<String> selectedSymptoms;
+  final TextEditingController otherController;
   final ValueChanged<String> onFeelingSelected;
   final ValueChanged<String> onSymptomToggled;
   final VoidCallback onSave;
@@ -14,6 +16,7 @@ class SymptomSelector extends StatelessWidget {
     super.key,
     required this.selectedFeeling,
     required this.selectedSymptoms,
+    required this.otherController,
     required this.onFeelingSelected,
     required this.onSymptomToggled,
     required this.onSave,
@@ -78,6 +81,19 @@ class SymptomSelector extends StatelessWidget {
                 );
               }).toList(),
             ),
+            if (selectedSymptoms.contains(kOtherSymptom)) ...[
+              const SizedBox(height: 12),
+              TextField(
+                controller: otherController,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(
+                  labelText: 'Describe your symptom',
+                  hintText: 'e.g. chest tightness, leg cramps',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+            ],
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,

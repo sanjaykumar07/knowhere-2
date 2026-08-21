@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
 import '../../services/notification_service.dart';
+import '../../services/trend_analysis_service.dart';
 import '../../models/user_model.dart';
 import '../../models/glucose_reading.dart';
 import '../../models/bp_reading.dart';
@@ -10,6 +11,7 @@ import '../../models/medication.dart';
 import '../../models/symptom_log.dart';
 import '../../widgets/glucose_card.dart';
 import '../../widgets/bp_card.dart';
+import '../../widgets/insight_banner.dart';
 import '../../widgets/symptom_selector.dart';
 import '../auth/login_screen.dart';
 import 'glucose_screen.dart';
@@ -18,7 +20,7 @@ import 'medication_screen.dart';
 import 'history_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
-  /// Switches the parent [MainShell] to another tab (Trends = 1, Meds = 2).
+  /// Switches the parent [MainShell] to another tab (History = 1, Meds = 2).
   /// Null when the dashboard is shown outside the shell, in which case the
   /// medication and history shortcuts fall back to pushing the screens.
   final void Function(int index)? onNavigate;
@@ -33,9 +35,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final _auth = AuthService();
   final _firestore = FirestoreService();
   final _notifications = NotificationService();
+  final _trend = TrendAnalysisService();
 
   String? _selectedFeeling;
   final Set<String> _selectedSymptoms = {};
+  final TextEditingController _otherController = TextEditingController();
 
   // Id of the most recent reading we've already evaluated for an alert.
   // build() re-runs every time the user switches tabs (this screen lives in
@@ -46,12 +50,52 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   String get _uid => _auth.currentUser!.uid;
 
+  @override
+  void dispose() {
+    _otherController.dispose();
+    super.dispose();
+  }
+
+  /// Toggle a symptom chip, enforcing that "None" is mutually exclusive with
+  /// every real symptom: picking "None" clears the rest, and picking any real
+  /// symptom clears "None".
+  void _toggleSymptom(String s) {
+    setState(() {
+      if (s == kNoneSymptom) {
+        if (_selectedSymptoms.contains(kNoneSymptom)) {
+          _selectedSymptoms.remove(kNoneSymptom);
+        } else {
+          _selectedSymptoms
+            ..clear()
+            ..add(kNoneSymptom);
+          _otherController.clear();
+        }
+        return;
+      }
+      // A real symptom was tapped — "None" can no longer apply.
+      _selectedSymptoms.remove(kNoneSymptom);
+      if (_selectedSymptoms.contains(s)) {
+        _selectedSymptoms.remove(s);
+        if (s == kOtherSymptom) _otherController.clear();
+      } else {
+        _selectedSymptoms.add(s);
+      }
+    });
+  }
+
   Future<void> _saveCheckIn() async {
+    // Fold the free-text entry into the symptom list, replacing the raw
+    // "Other" token with what the patient actually typed.
+    final symptoms = _selectedSymptoms.toList();
+    if (symptoms.remove(kOtherSymptom)) {
+      final custom = _otherController.text.trim();
+      if (custom.isNotEmpty) symptoms.add(custom);
+    }
     const uuid = Uuid();
     final log = SymptomLog(
       id: uuid.v4(),
       feeling: _selectedFeeling!,
-      symptoms: _selectedSymptoms.toList(),
+      symptoms: symptoms,
       timestamp: DateTime.now(),
     );
     await _firestore.saveSymptomLog(_uid, log);
@@ -59,6 +103,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() {
       _selectedFeeling = null;
       _selectedSymptoms.clear();
+      _otherController.clear();
     });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Check-in saved')),
@@ -169,6 +214,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 const SizedBox(height: 16),
 
+                // Rule-based health-trend insight (glucose-led, BP fallback).
+                _healthTrendSection(),
+
                 // Medication summary card
                 StreamBuilder<List<Medication>>(
                   stream: _firestore.streamMedications(_uid),
@@ -195,14 +243,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 SymptomSelector(
                   selectedFeeling: _selectedFeeling,
                   selectedSymptoms: _selectedSymptoms,
+                  otherController: _otherController,
                   onFeelingSelected: (f) => setState(() => _selectedFeeling = f),
-                  onSymptomToggled: (s) => setState(() {
-                    if (_selectedSymptoms.contains(s)) {
-                      _selectedSymptoms.remove(s);
-                    } else {
-                      _selectedSymptoms.add(s);
-                    }
-                  }),
+                  onSymptomToggled: _toggleSymptom,
                   onSave: _saveCheckIn,
                 ),
                 const SizedBox(height: 16),
@@ -218,6 +261,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
           );
         },
       ),
+    );
+  }
+
+  /// A single "Your health trend" banner. Uses recent glucose when there are
+  /// enough readings; otherwise falls back to blood pressure. Never blocks the
+  /// dashboard — on loading/error it renders nothing.
+  Widget _healthTrendSection() {
+    return StreamBuilder<List<GlucoseReading>>(
+      stream: _firestore.streamGlucoseHistory(_uid, limit: 30),
+      builder: (context, gSnap) {
+        if (gSnap.hasError || !gSnap.hasData) return const SizedBox.shrink();
+        final glucose = gSnap.data!;
+        if (glucose.length >= TrendAnalysisService.kMinReadings) {
+          return _wrapInsight(_trend.analyzeGlucose(glucose));
+        }
+        return StreamBuilder<List<BPReading>>(
+          stream: _firestore.streamBPHistory(_uid, limit: 30),
+          builder: (context, bSnap) {
+            if (bSnap.hasError || !bSnap.hasData) return const SizedBox.shrink();
+            final bp = bSnap.data!;
+            if (bp.length >= TrendAnalysisService.kMinReadings) {
+              return _wrapInsight(_trend.analyzeBpSystolic(bp));
+            }
+            // Neither metric has enough data yet — gentle glucose prompt.
+            return _wrapInsight(_trend.analyzeGlucose(glucose));
+          },
+        );
+      },
+    );
+  }
+
+  Widget _wrapInsight(TrendSummary summary) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Your health trend',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+        const SizedBox(height: 8),
+        InsightBanner(summary: summary),
+        const SizedBox(height: 16),
+      ],
     );
   }
 

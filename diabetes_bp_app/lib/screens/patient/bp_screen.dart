@@ -32,9 +32,17 @@ class _BPScreenState extends State<BPScreen> {
   Future<void> _save() async {
     if (_generatedReading == null) return;
     setState(() => _saving = true);
-    await _firestore.saveBPReading(_auth.currentUser!.uid, _generatedReading!);
-    if (!mounted) return;
-    Navigator.pop(context);
+    try {
+      await _firestore.saveBPReading(_auth.currentUser!.uid, _generatedReading!);
+      if (!mounted) return;
+      Navigator.pop(context);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not save reading. Please try again.')),
+      );
+    }
   }
 
   @override

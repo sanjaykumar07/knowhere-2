@@ -33,7 +33,9 @@ class SymptomLog {
   }
 }
 
-/// Fixed, tappable symptom options — no free text required.
+/// Tappable symptom options. 'Other' reveals a free-text field so the patient
+/// can describe a symptom not listed here. 'None' is mutually exclusive with
+/// every other option (see [kNoneSymptom]).
 const List<String> kSymptomOptions = [
   'Headache',
   'Dizziness',
@@ -43,8 +45,16 @@ const List<String> kSymptomOptions = [
   'Fatigue',
   'Nausea',
   'Shortness of breath',
+  'Other',
   'None',
 ];
+
+/// The "no symptoms" option. Selecting it clears all others, and selecting any
+/// other symptom clears it.
+const String kNoneSymptom = 'None';
+
+/// The option that reveals a free-text field for a custom symptom.
+const String kOtherSymptom = 'Other';
 
 const List<String> kNotTakenReasons = [
   'Forgot',

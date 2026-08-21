@@ -4,6 +4,7 @@ import 'firebase_options.dart';
 import 'services/auth_service.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/main_shell.dart';
+import 'theme/app_style.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,7 +24,13 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        colorSchemeSeed: const Color(0xFF2563EB),
+        colorSchemeSeed: AppStyle.brandBlue,
+        scaffoldBackgroundColor: AppStyle.scaffoldBackground,
+        cardTheme: CardThemeData(
+          elevation: 2,
+          clipBehavior: Clip.antiAlias,
+          shape: AppStyle.cardShape,
+        ),
         inputDecorationTheme: const InputDecorationTheme(
           filled: false,
         ),

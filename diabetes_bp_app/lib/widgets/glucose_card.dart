@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/glucose_reading.dart';
+import '../theme/app_style.dart';
 
 /// Dashboard card showing the latest blood glucose reading.
 /// Pure UI — no Firestore calls happen inside this widget.
@@ -10,23 +11,11 @@ class GlucoseCard extends StatelessWidget {
 
   const GlucoseCard({super.key, required this.latest, required this.onUpdate});
 
-  Color _statusColor(String status) {
-    switch (status) {
-      case 'Low':
-      case 'High':
-        return Colors.red;
-      case 'Elevated':
-        return Colors.orange;
-      default:
-        return Colors.green;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final hasReading = latest != null;
     final statusColor =
-        hasReading ? _statusColor(latest!.status) : Colors.grey;
+        hasReading ? AppStyle.statusColor(latest!.status) : Colors.grey;
 
     return Card(
       elevation: 2,
@@ -49,19 +38,32 @@ class GlucoseCard extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(latest!.value.toStringAsFixed(0),
-                      style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
-                  const SizedBox(width: 4),
-                  const Padding(
-                    padding: EdgeInsets.only(bottom: 6),
-                    child: Text('mg/dL', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                  Expanded(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Flexible(
+                          child: Text(latest!.value.toStringAsFixed(0),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  fontSize: 32, fontWeight: FontWeight.bold)),
+                        ),
+                        const SizedBox(width: 4),
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: 6),
+                          child: Text('mg/dL',
+                              style: TextStyle(fontSize: 14, color: Colors.grey)),
+                        ),
+                      ],
+                    ),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: statusColor.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(AppStyle.pillRadius),
                     ),
                     child: Text(latest!.status,
                         style: TextStyle(color: statusColor, fontWeight: FontWeight.w600, fontSize: 12)),

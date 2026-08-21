@@ -28,6 +28,12 @@ class FirestoreService {
     return _userDoc(user.uid).set(user.toMap());
   }
 
+  /// Updates an existing profile. Uses merge so fields not present in
+  /// [UserModel.toMap] are never clobbered.
+  Future<void> updateUserProfile(UserModel user) {
+    return _userDoc(user.uid).set(user.toMap(), SetOptions(merge: true));
+  }
+
   Future<UserModel?> getUserProfile(String uid) async {
     final snap = await _userDoc(uid).get();
     if (!snap.exists) return null;
@@ -43,6 +49,12 @@ class FirestoreService {
 
   Future<void> addMedication(String uid, Medication med) {
     return _userDoc(uid).collection('medications').doc(med.id).set(med.toMap());
+  }
+
+  /// Removes a medication. Its historical `medicationLogs` are left intact so
+  /// adherence history is preserved.
+  Future<void> deleteMedication(String uid, String medicationId) {
+    return _userDoc(uid).collection('medications').doc(medicationId).delete();
   }
 
   Stream<List<Medication>> streamMedications(String uid) {
@@ -77,9 +89,20 @@ class FirestoreService {
         .set(reading.toMap());
   }
 
-  Stream<List<GlucoseReading>> streamGlucoseHistory(String uid, {int limit = 30}) {
-    return _userDoc(uid)
-        .collection('glucoseReadings')
+  /// Recent glucose readings, newest first.
+  ///
+  /// [since] optionally restricts to readings on/after a date (used by the
+  /// 7/30-day History selector). The `where` and `orderBy` both target the
+  /// `timestamp` field, so no composite index is required.
+  Stream<List<GlucoseReading>> streamGlucoseHistory(String uid,
+      {int limit = 30, DateTime? since}) {
+    Query<Map<String, dynamic>> query =
+        _userDoc(uid).collection('glucoseReadings');
+    if (since != null) {
+      query = query.where('timestamp',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(since));
+    }
+    return query
         .orderBy('timestamp', descending: true)
         .limit(limit)
         .snapshots()
@@ -96,9 +119,16 @@ class FirestoreService {
         .set(reading.toMap());
   }
 
-  Stream<List<BPReading>> streamBPHistory(String uid, {int limit = 30}) {
-    return _userDoc(uid)
-        .collection('bpReadings')
+  /// Recent BP readings, newest first. See [streamGlucoseHistory] for [since].
+  Stream<List<BPReading>> streamBPHistory(String uid,
+      {int limit = 30, DateTime? since}) {
+    Query<Map<String, dynamic>> query =
+        _userDoc(uid).collection('bpReadings');
+    if (since != null) {
+      query = query.where('timestamp',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(since));
+    }
+    return query
         .orderBy('timestamp', descending: true)
         .limit(limit)
         .snapshots()
