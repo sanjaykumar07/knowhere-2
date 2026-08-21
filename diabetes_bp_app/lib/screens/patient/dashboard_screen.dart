@@ -16,10 +16,14 @@ import 'glucose_screen.dart';
 import 'bp_screen.dart';
 import 'medication_screen.dart';
 import 'history_screen.dart';
-import 'profile_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  /// Switches the parent [MainShell] to another tab (Trends = 1, Meds = 2).
+  /// Null when the dashboard is shown outside the shell, in which case the
+  /// medication and history shortcuts fall back to pushing the screens.
+  final void Function(int index)? onNavigate;
+
+  const DashboardScreen({super.key, this.onNavigate});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -32,6 +36,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   String? _selectedFeeling;
   final Set<String> _selectedSymptoms = {};
+
+  // Id of the most recent reading we've already evaluated for an alert.
+  // build() re-runs every time the user switches tabs (this screen lives in
+  // MainShell's IndexedStack), so we guard by id to avoid re-popping the same
+  // alert dialog on every rebuild. A new reading (new id) alerts once.
+  String? _lastAlertedGlucoseId;
+  String? _lastAlertedBPId;
 
   String get _uid => _auth.currentUser!.uid;
 
@@ -69,6 +80,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
+  /// Jump to the Meds tab in the shell, or push the screen if standalone.
+  void _openMeds() {
+    if (widget.onNavigate != null) {
+      widget.onNavigate!(2);
+    } else {
+      Navigator.push(
+          context, MaterialPageRoute(builder: (_) => const MedicationScreen()));
+    }
+  }
+
+  /// Jump to the Trends tab in the shell, or push the screen if standalone.
+  void _openHistory() {
+    if (widget.onNavigate != null) {
+      widget.onNavigate!(1);
+    } else {
+      Navigator.push(
+          context, MaterialPageRoute(builder: (_) => const HistoryScreen()));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -76,17 +107,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         title: const Text('Home'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.person_outline),
-            onPressed: () => Navigator.push(
-                context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
-          ),
-          IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
+              final navigator = Navigator.of(context);
               await _auth.signOut();
               if (!mounted) return;
-              Navigator.pushAndRemoveUntil(
-                context,
+              navigator.pushAndRemoveUntil(
                 MaterialPageRoute(builder: (_) => const LoginScreen()),
                 (route) => false,
               );
@@ -112,7 +138,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   stream: _firestore.streamGlucoseHistory(_uid, limit: 1),
                   builder: (context, snap) {
                     final latest = (snap.data != null && snap.data!.isNotEmpty) ? snap.data!.first : null;
-                    if (latest != null) _maybeShowAlert(_notifications.checkGlucose(latest));
+                    if (latest != null && latest.id != _lastAlertedGlucoseId) {
+                      _lastAlertedGlucoseId = latest.id;
+                      _maybeShowAlert(_notifications.checkGlucose(latest));
+                    }
                     return GlucoseCard(
                       latest: latest,
                       onUpdate: () => Navigator.push(
@@ -127,7 +156,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   stream: _firestore.streamBPHistory(_uid, limit: 1),
                   builder: (context, snap) {
                     final latest = (snap.data != null && snap.data!.isNotEmpty) ? snap.data!.first : null;
-                    if (latest != null) _maybeShowAlert(_notifications.checkBP(latest));
+                    if (latest != null && latest.id != _lastAlertedBPId) {
+                      _lastAlertedBPId = latest.id;
+                      _maybeShowAlert(_notifications.checkBP(latest));
+                    }
                     return BPCard(
                       latest: latest,
                       onUpdate: () =>
@@ -152,8 +184,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ? 'No medications added yet'
                             : '${meds.length} medication${meds.length == 1 ? '' : 's'} scheduled'),
                         trailing: const Icon(Icons.chevron_right),
-                        onTap: () => Navigator.push(
-                            context, MaterialPageRoute(builder: (_) => const MedicationScreen())),
+                        onTap: _openMeds,
                       ),
                     );
                   },
@@ -177,8 +208,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(height: 16),
 
                 OutlinedButton.icon(
-                  onPressed: () => Navigator.push(
-                      context, MaterialPageRoute(builder: (_) => const HistoryScreen())),
+                  onPressed: _openHistory,
                   icon: const Icon(Icons.show_chart),
                   label: const Text('View History & Trends'),
                 ),

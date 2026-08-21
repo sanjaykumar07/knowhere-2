@@ -43,14 +43,14 @@ class DefaultFirebaseOptions {
     storageBucket: 'diabetes-app-d52fc.firebasestorage.app',
     measurementId: 'G-TWCX9K603L',
   );
-  static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'REPLACE_ME',
-    appId: 'REPLACE_ME',
-    messagingSenderId: 'REPLACE_ME',
-    projectId: 'REPLACE_ME',
-    storageBucket: 'REPLACE_ME',
-  );
 
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: 'AIzaSyAFjDwF0TqgcxLtERZIku0OzcgCj3ZXWV0',
+    appId: '1:406166357289:android:10313ed1337fcbe0d3e338',
+    messagingSenderId: '406166357289',
+    projectId: 'diabetes-app-d52fc',
+    storageBucket: 'diabetes-app-d52fc.firebasestorage.app',
+  );
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'REPLACE_ME',
     appId: 'REPLACE_ME',

@@ -74,7 +74,7 @@ class _MedicationScreenState extends State<MedicationScreen> {
                 TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name')),
                 TextField(controller: doseCtrl, decoration: const InputDecoration(labelText: 'Dose')),
                 DropdownButtonFormField<String>(
-                  value: frequency,
+                  initialValue: frequency,
                   decoration: const InputDecoration(labelText: 'Frequency'),
                   items: ['Once daily', 'Twice daily', 'Three times daily', 'As needed']
                       .map((f) => DropdownMenuItem(value: f, child: Text(f)))
@@ -83,7 +83,7 @@ class _MedicationScreenState extends State<MedicationScreen> {
                 ),
                 TextField(controller: timeCtrl, decoration: const InputDecoration(labelText: 'Time (e.g. 8:00 AM)')),
                 DropdownButtonFormField<String>(
-                  value: instructions,
+                  initialValue: instructions,
                   decoration: const InputDecoration(labelText: 'Instructions'),
                   items: ['None', 'Before food', 'After food']
                       .map((f) => DropdownMenuItem(value: f, child: Text(f)))

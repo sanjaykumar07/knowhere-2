@@ -34,8 +34,8 @@ class BPCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: const [
+            const Row(
+              children: [
                 Text('❤️', style: TextStyle(fontSize: 20)),
                 SizedBox(width: 8),
                 Text('BLOOD PRESSURE',
@@ -58,7 +58,7 @@ class BPCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.15),
+                      color: statusColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(latest!.status,

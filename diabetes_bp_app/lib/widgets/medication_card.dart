@@ -83,7 +83,7 @@ class MedicationCard extends StatelessWidget {
                   );
                   if (choice == true) {
                     onTaken(true);
-                  } else if (choice == false) {
+                  } else if (choice == false && context.mounted) {
                     await _showNotTakenSheet(context);
                   }
                 },

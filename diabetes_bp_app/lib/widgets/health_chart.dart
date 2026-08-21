@@ -15,7 +15,7 @@ class HealthChart extends StatelessWidget {
     super.key,
     required this.primarySeries,
     this.secondarySeries,
-    this.primaryColor = Colors.red,
+    this.primaryColor = Colors.blue,
     this.secondaryColor = Colors.deepOrange,
     required this.minY,
     required this.maxY,
@@ -28,7 +28,7 @@ class HealthChart extends StatelessWidget {
       color: color,
       barWidth: 3,
       dotData: const FlDotData(show: true),
-      belowBarData: BarAreaData(show: true, color: color.withOpacity(0.08)),
+      belowBarData: BarAreaData(show: true, color: color.withValues(alpha: 0.08)),
     );
   }
 

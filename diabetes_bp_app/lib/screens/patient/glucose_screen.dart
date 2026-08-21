@@ -51,26 +51,26 @@ class _GlucoseScreenState extends State<GlucoseScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Card(
-              color: Colors.blue.withOpacity(0.06),
+              color: Colors.blue.withValues(alpha: 0.06),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
+              child: const Padding(
+                padding: EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('SIMULATED GLUCOMETER',
+                    Text('SIMULATED GLUCOMETER',
                         style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Text('Device\n${GlucoseSimulator.deviceId}'),
-                    const SizedBox(height: 8),
-                    const Row(
+                    SizedBox(height: 8),
+                    Row(
                       children: [
                         Text('Status  '),
                         Text('🟢 Connected', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),
                       ],
                     ),
-                    const SizedBox(height: 4),
-                    const Text(
+                    SizedBox(height: 4),
+                    Text(
                       'This is prototype/simulated data — no real medical device is connected.',
                       style: TextStyle(fontSize: 12, color: Colors.grey),
                     ),
@@ -80,7 +80,7 @@ class _GlucoseScreenState extends State<GlucoseScreen> {
             ),
             const SizedBox(height: 20),
             DropdownButtonFormField<String>(
-              value: _measurementType,
+              initialValue: _measurementType,
               decoration: const InputDecoration(labelText: 'Measurement type', border: OutlineInputBorder()),
               items: ['Fasting', 'Before Meal', 'After Meal', 'Random']
                   .map((t) => DropdownMenuItem(value: t, child: Text(t)))
@@ -89,7 +89,7 @@ class _GlucoseScreenState extends State<GlucoseScreen> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<GlucoseScenario>(
-              value: _scenario,
+              initialValue: _scenario,
               decoration: const InputDecoration(labelText: 'Simulation scenario', border: OutlineInputBorder()),
               items: const [
                 DropdownMenuItem(value: GlucoseScenario.normal, child: Text('Normal')),

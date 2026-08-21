@@ -4,7 +4,7 @@ import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
 import '../../models/user_model.dart';
 import '../../models/medication.dart';
-import '../patient/dashboard_screen.dart';
+import '../main_shell.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -120,7 +120,7 @@ class _SignupScreenState extends State<SignupScreen> {
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        MaterialPageRoute(builder: (_) => const MainShell()),
       );
     } catch (e) {
       setState(() => _error = _authService.friendlyError(e));
@@ -184,7 +184,7 @@ class _SignupScreenState extends State<SignupScreen> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              value: _gender,
+              initialValue: _gender,
               decoration: _dec('Gender'),
               items: ['Female', 'Male', 'Other', 'Prefer not to say']
                   .map((g) => DropdownMenuItem(value: g, child: Text(g)))
@@ -213,7 +213,7 @@ class _SignupScreenState extends State<SignupScreen> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              value: _diabetesType,
+              initialValue: _diabetesType,
               decoration: _dec('Diabetes type'),
               items: ['Type 1', 'Type 2', 'Other', 'Not diagnosed']
                   .map((t) => DropdownMenuItem(value: t, child: Text(t)))
@@ -250,27 +250,27 @@ class _SignupScreenState extends State<SignupScreen> {
             _sectionTitle('Medication setup'),
             const SizedBox(height: 8),
             const Text('Do you currently take medication for diabetes or hypertension?'),
-            Row(
-              children: [
-                Expanded(
-                  child: RadioListTile<bool>(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Yes'),
-                    value: true,
-                    groupValue: _takesMedication,
-                    onChanged: (v) => setState(() => _takesMedication = v!),
+            RadioGroup<bool>(
+              groupValue: _takesMedication,
+              onChanged: (v) => setState(() => _takesMedication = v!),
+              child: const Row(
+                children: [
+                  Expanded(
+                    child: RadioListTile<bool>(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text('Yes'),
+                      value: true,
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: RadioListTile<bool>(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('No'),
-                    value: false,
-                    groupValue: _takesMedication,
-                    onChanged: (v) => setState(() => _takesMedication = v!),
+                  Expanded(
+                    child: RadioListTile<bool>(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text('No'),
+                      value: false,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             if (_takesMedication) ...[
               const SizedBox(height: 8),
@@ -299,7 +299,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         TextFormField(controller: draft.doseCtrl, decoration: _dec('Dose (e.g. 500 mg)')),
                         const SizedBox(height: 8),
                         DropdownButtonFormField<String>(
-                          value: draft.frequency,
+                          initialValue: draft.frequency,
                           decoration: _dec('Frequency'),
                           items: ['Once daily', 'Twice daily', 'Three times daily', 'As needed']
                               .map((f) => DropdownMenuItem(value: f, child: Text(f)))
@@ -310,7 +310,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         TextFormField(controller: draft.timeCtrl, decoration: _dec('Time (e.g. 8:00 AM)')),
                         const SizedBox(height: 8),
                         DropdownButtonFormField<String>(
-                          value: draft.instructions,
+                          initialValue: draft.instructions,
                           decoration: _dec('Before/after food'),
                           items: ['None', 'Before food', 'After food']
                               .map((f) => DropdownMenuItem(value: f, child: Text(f)))

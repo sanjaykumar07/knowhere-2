@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
-import '../patient/dashboard_screen.dart';
+import '../main_shell.dart';
 import 'signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -33,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        MaterialPageRoute(builder: (_) => const MainShell()),
       );
     } catch (e) {
       setState(() => _error = _authService.friendlyError(e));

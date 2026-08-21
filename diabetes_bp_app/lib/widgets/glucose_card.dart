@@ -36,8 +36,8 @@ class GlucoseCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: const [
+            const Row(
+              children: [
                 Text('🩸', style: TextStyle(fontSize: 20)),
                 SizedBox(width: 8),
                 Text('BLOOD GLUCOSE',
@@ -49,7 +49,7 @@ class GlucoseCard extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text('${latest!.value.toStringAsFixed(0)}',
+                  Text(latest!.value.toStringAsFixed(0),
                       style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
                   const SizedBox(width: 4),
                   const Padding(
@@ -60,7 +60,7 @@ class GlucoseCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.15),
+                      color: statusColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(latest!.status,

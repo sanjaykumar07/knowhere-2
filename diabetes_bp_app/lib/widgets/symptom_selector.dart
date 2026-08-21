@@ -28,7 +28,7 @@ class SymptomSelector extends StatelessWidget {
           margin: const EdgeInsets.symmetric(horizontal: 4),
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: selected ? Colors.blue.withOpacity(0.15) : Colors.grey.withOpacity(0.08),
+            color: selected ? Colors.blue.withValues(alpha: 0.15) : Colors.grey.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: selected ? Colors.blue : Colors.transparent, width: 1.5),
           ),
